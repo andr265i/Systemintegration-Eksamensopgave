@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="CourierService/CourierService.csproj" Id="6f0f8321-4580-4fdd-ad0e-a63e1692bd18" />
+  <Project Path="OrderApi/OrderService.csproj" />
+  <Project Path="RestaurantService/RestaurantService.csproj" Id="e392d0e5-973a-4d0c-b85b-c30a76940ee7" />
+  <Project Path="Shared/Shared.csproj" />
+</Solution>
