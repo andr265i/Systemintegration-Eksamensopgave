@@ -36,7 +36,7 @@ namespace CourierService.Controllers
             // 2. DOMMEREN TRÆDER IND: Er udbuddet stadig ledigt?
             if (offer.Status != "Free")
             {
-                return BadRequest("Beklager! Et andet bud var hurtigere og har allerede taget opgaven.");
+                return Conflict("Beklager! Et andet bud var hurtigere og har allerede taget opgaven.");
             }
 
             // 3. Budet var først! Vi låser opgaven til dem.

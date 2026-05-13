@@ -8,30 +8,27 @@ namespace OrderService.Workers
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<OutboxPublisherService> _logger;
+        private readonly IConnection _connection;
 
         // Vi injicerer IServiceProvider fordi en BackgroundService lever for evigt (Singleton),
         // men vores DbContext kun lever kortvarigt pr. request (Scoped).
-        public OutboxPublisherService(IServiceProvider serviceProvider, ILogger<OutboxPublisherService> logger)
+        public OutboxPublisherService(IServiceProvider serviceProvider, ILogger<OutboxPublisherService> logger, IConnection connection)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _connection = connection;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Outbox Publisher er startet...");
 
-            // Opsætning af RabbitMQ forbindelse (til localhost under udvikling)
-            var factory = new ConnectionFactory { HostName = "localhost" };
-
-            // CreateConnectionAsync returnerer Task<IConnection>, så vi skal await'e den.
-            // IConnection her har en CreateChannelAsync-metode (asynkron), så brug den i stedet for CreateModel.
-            await using var connection = await factory.CreateConnectionAsync();
-            using var channel = await connection.CreateChannelAsync();
+            // Opretter en kanal til RabbitMQ. Vi genbruger den, så vi ikke åbner og lukker forbindelsen hele tiden.
+            using var channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
             // Opretter en 'Direct' exchange. Den fungerer som en megafon: 
             // Den råber beskeden ud til alle de services, der gider lytte.
-            await channel.ExchangeDeclareAsync(exchange: "eaat_events", type: ExchangeType.Direct);
+            await channel.ExchangeDeclareAsync(exchange: "eaat_events", type: ExchangeType.Direct, cancellationToken: stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {

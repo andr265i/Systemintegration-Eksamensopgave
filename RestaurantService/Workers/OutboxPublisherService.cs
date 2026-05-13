@@ -4,24 +4,24 @@ using System.Text;
 
 namespace RestaurantService.Workers
 {
-    public class RestaurantOutboxPublisher : BackgroundService
+    public class OutboxPublisherService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<RestaurantOutboxPublisher> _logger;
+        private readonly ILogger<OutboxPublisherService> _logger;
+        private readonly IConnection _connection;
 
-        public RestaurantOutboxPublisher(IServiceProvider serviceProvider, ILogger<RestaurantOutboxPublisher> logger)
+        public OutboxPublisherService(IServiceProvider serviceProvider, ILogger<OutboxPublisherService> logger, IConnection connection)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _connection = connection;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Restaurant Outbox Publisher kører...");
 
-            var factory = new ConnectionFactory { HostName = "localhost" };
-            using var connection = await factory.CreateConnectionAsync(stoppingToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+            using var channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
             // Deklarer megafonen
             await channel.ExchangeDeclareAsync("accepted_orders", ExchangeType.Fanout, cancellationToken: stoppingToken);

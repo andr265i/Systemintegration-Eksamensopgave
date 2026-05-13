@@ -2,13 +2,14 @@
 using Microsoft.EntityFrameworkCore;
 using OrderService.Data;
 using OrderService.Workers;
+using RabbitMQ.Client;
 using Scalar.AspNetCore;
 
 namespace OrderApi
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,10 @@ namespace OrderApi
 
             builder.Services.AddHostedService<OutboxPublisherService>();
             builder.Services.AddHostedService<OrderAcceptedListener>();
+
+            var factory = new ConnectionFactory() { HostName = "localhost" };
+            var connection = await factory.CreateConnectionAsync();
+            builder.Services.AddSingleton(connection);
 
             var app = builder.Build();
 

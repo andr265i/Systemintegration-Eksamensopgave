@@ -2,13 +2,14 @@
 using CourierService.Data;
 using CourierService.Workers;
 using Microsoft.EntityFrameworkCore;
+using RabbitMQ.Client;
 using Scalar.AspNetCore;
 
 namespace CourierService
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,11 @@ namespace CourierService
             // Vores baggrundsarbejder, der lytter efter accepterede ordrer og opretter leveringsudbud
             builder.Services.AddHostedService<DeliveryOfferListener>();
             builder.Services.AddHostedService<CourierOutboxPublisherService>();
+
+            var factory = new ConnectionFactory() { HostName = "localhost" };
+            var connection = await factory.CreateConnectionAsync();
+            builder.Services.AddSingleton(connection);
+
 
             var app = builder.Build();
 

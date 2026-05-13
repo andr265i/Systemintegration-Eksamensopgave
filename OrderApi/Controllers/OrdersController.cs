@@ -36,7 +36,7 @@ namespace OrderService.Controllers
             _dbContext.Orders.Add(newOrder);
             _dbContext.OutboxMessages.Add(outboxMessage);
 
-            // 5. Gem i én samlet transaktion (Data Consistency!)
+            // 5. Gem i én samlet transaktion (Data Consistency)
             // Hvis strømmen går præcis her, gemmes INGEN af dem. 
             // Vi undgår at have en ordre uden en besked, eller en besked uden en ordre.
             await _dbContext.SaveChangesAsync();

@@ -1,5 +1,6 @@
 
 using Microsoft.EntityFrameworkCore;
+using RabbitMQ.Client;
 using RestaurantService.Data;
 using RestaurantService.Workers;
 using Scalar.AspNetCore;
@@ -8,7 +9,7 @@ namespace RestaurantService
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +24,11 @@ namespace RestaurantService
             //Services for listening to messages from the message bus and processing them
             builder.Services.AddHostedService<OrderListener>();
             // Services for publishing messages from the outbox table to the message bus
-            builder.Services.AddHostedService<RestaurantOutboxPublisher>();
+            builder.Services.AddHostedService<OutboxPublisherService>();
+
+            var factory = new ConnectionFactory() { HostName = "localhost" };
+            var connection = await factory.CreateConnectionAsync();
+            builder.Services.AddSingleton(connection);
 
             var app = builder.Build();
 

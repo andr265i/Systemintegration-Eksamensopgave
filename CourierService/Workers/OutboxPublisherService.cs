@@ -8,20 +8,20 @@ namespace CourierService.Workers
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CourierOutboxPublisherService> _logger;
+        private readonly IConnection _connection;
 
-        public CourierOutboxPublisherService(IServiceProvider serviceProvider, ILogger<CourierOutboxPublisherService> logger)
+        public CourierOutboxPublisherService(IServiceProvider serviceProvider, ILogger<CourierOutboxPublisherService> logger, IConnection connection)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _connection = connection;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Courier Outbox Publisher er startet...");
 
-            var factory = new ConnectionFactory { HostName = "localhost" };
-            using var connection = await factory.CreateConnectionAsync(stoppingToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+            using var channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
             // Vi opretter en NY megafon (Fanout) til at fortælle, at opgaven er taget
             await channel.ExchangeDeclareAsync("eaat_delivery_assigned", ExchangeType.Fanout, cancellationToken: stoppingToken);
