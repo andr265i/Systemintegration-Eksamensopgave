@@ -60,7 +60,6 @@ namespace OrderService.Controllers
             {
                 OrderId = order.Id,
                 Status = order.Status,
-                LastUpdated = DateTime.UtcNow // God lille detalje til kunden
             });
         }
     }

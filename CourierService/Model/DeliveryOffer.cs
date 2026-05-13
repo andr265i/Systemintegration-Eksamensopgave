@@ -13,5 +13,7 @@ namespace CourierService.Model
         public string Status { get; set; } = "Free"; // "Free" eller "Taken"
         public Guid? AssignedCourierId { get; set; } // Hvem vandt ræset? (Null indtil da)
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public string ZipCode { get; set; } = ""; // For at kunne matche med budets område
     }
 }

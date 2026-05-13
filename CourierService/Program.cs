@@ -23,6 +23,7 @@ namespace CourierService
 
             // Vores baggrundsarbejder, der lytter efter accepterede ordrer og opretter leveringsudbud
             builder.Services.AddHostedService<DeliveryOfferListener>();
+            builder.Services.AddHostedService<CourierOutboxPublisherService>();
 
             var app = builder.Build();
 

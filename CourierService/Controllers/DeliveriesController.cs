@@ -1,6 +1,9 @@
 ﻿using CourierService.Data;
+using CourierService.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Shared;
+using System.Text.Json;
 
 namespace CourierService.Controllers
 {
@@ -40,6 +43,23 @@ namespace CourierService.Controllers
             offer.Status = "Taken";
             offer.AssignedCourierId = request.CourierId;
 
+            var deliveryAssignedEvent = new DeliveryAssignedEvent
+            {
+                OrderId = id,
+                CourierId = request.CourierId
+            };
+
+            var outboxMessage = new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                EventType = "DeliveryAssignedEvent",
+                Payload = JsonSerializer.Serialize(deliveryAssignedEvent),
+                CreatedAt = DateTime.UtcNow,
+                IsProcessed = false
+            };
+
+            _dbContext.OutboxMessages.Add(outboxMessage);
+
             // Gem ændringen. Hvis to bude rammer denne linje fuldstændig samtidig, 
             // vil databasen kun lade den første gemme succesfuldt.
             try
@@ -48,7 +68,7 @@ namespace CourierService.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                return BadRequest("Beklager! Et andet bud var hurtigere og har allerede taget opgaven.");
+                return Conflict("Beklager! Et andet bud var hurtigere og har allerede taget opgaven.");
             }
 
             return Ok(new
@@ -59,10 +79,17 @@ namespace CourierService.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAvailableOffers()
+        public IActionResult GetAvailableOffers([FromQuery] string? zipCode)
         {
             // En metode til appen, så den kan vise listen af ledige opgaver
-            var offers = _dbContext.DeliveryOffers.Where(o => o.Status == "Free").ToList();
+            var query = _dbContext.DeliveryOffers.Where(o => o.Status == "Free");
+
+            if (!string.IsNullOrEmpty(zipCode))
+            {
+                query = query.Where(o => o.ZipCode == zipCode);
+            }
+
+            var offers = query.ToList();
             return Ok(offers);
         }
 

@@ -54,7 +54,7 @@ namespace RestaurantService.Workers
                         message.IsProcessed = true;
                     }
 
-                    if (unsentMessages.Any())
+                    if (unsentMessages.Count != 0)
                     {
                         await dbContext.SaveChangesAsync(stoppingToken);
                         _logger.LogInformation($"Sendte {unsentMessages.Count} outbox-beskeder ud på megafonen.");

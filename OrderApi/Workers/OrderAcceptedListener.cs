@@ -55,7 +55,7 @@ public class OrderAcceptedListener : BackgroundService
                     var order = await dbContext.Orders.FindAsync(acceptedEvent.OrderId, stoppingToken);
                     if (order != null)
                     {
-                        order.Status = "Accepted "; // Kunden kan nu se dette i appen!
+                        order.Status = "Accepted"; // Kunden kan nu se dette i appen!
                         await dbContext.SaveChangesAsync(stoppingToken);
 
                         _logger.LogInformation($"Kunde-ordre {order.Id} er opdateret til 'Accepted'!");

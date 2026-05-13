@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RestaurantService.Data;
 using RestaurantService.Model;
 using Shared;
@@ -18,21 +19,31 @@ namespace RestaurantService.Controllers
         }
 
         [HttpPost("{orderId}/accept")]
-        public async Task<IActionResult> AcceptOrder(Guid orderId)
+        public async Task<IActionResult> AcceptOrder(Guid orderId, [FromQuery] int restaurantId, [FromQuery] string zipCode)
         {
             var order = await _dbContext.Orders.FindAsync(orderId);
             if (order == null) return NotFound("Ordren findes ikke.");
+
+            // Hvis ordren ligger i databasen, men tilhører en anden restaurant, så afviser vi handlingen
+            if (order.ResturantId != restaurantId)
+            {
+                // Status 403 Forbidden betyder: "Jeg ved godt hvem du er, men det der har du ikke lov til"
+                return StatusCode(403, "Du har ikke rettigheder til at acceptere en anden restaurants ordre");
+            }
+
             if (order.Status != "Received") return BadRequest("Ordren kan ikke accepteres, da den ikke er i status 'Received'");
 
             // 1. Ændr status
-            order.Status = "In Progress";
+            //order.Status = "In Progress";
+            order.Status = "Accepted";
 
             // 2. Skab beskeden (vores "huskeseddel")
             var acceptedEvent = new OrderAcceptedEvent
             {
                 OrderId = orderId,
-                RestaurantId = 1, // I et ægte system ville dette være restaurantens ID
-                AcceptedAt = DateTime.UtcNow
+                RestaurantId = order.ResturantId,
+                AcceptedAt = DateTime.UtcNow,
+                ZipCode = zipCode
             };
 
             var outboxMessage = new OutboxMessage
@@ -57,10 +68,12 @@ namespace RestaurantService.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetOrders([FromQuery] string? status)
+        public async Task<IActionResult> GetOrders([FromQuery] string? status, [FromQuery] int restaurantId)
         {
             // Vi starter med at kigge på alle ordrer
             var query = _dbContext.Orders.AsQueryable();
+
+            query = query.Where(o => o.ResturantId == restaurantId);
 
             // Hvis der er blevet bedt om en specifik status (f.eks. ?status=Accepted), filtrerer vi listen
             if (!string.IsNullOrEmpty(status))
@@ -69,7 +82,8 @@ namespace RestaurantService.Controllers
             }
 
             // Vi sorterer dem, så de ældste ordrer ligger øverst (First-in, First-out)
-            var orders = query.OrderBy(o => o.ReceivedAt).ToList();
+            //var orders = query.OrderBy(o => o.ReceivedAt).ToList();
+            var orders = await query.OrderBy(o => o.ReceivedAt).ToListAsync();
 
             return Ok(orders);
         }

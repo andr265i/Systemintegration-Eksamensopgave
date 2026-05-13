@@ -50,7 +50,7 @@ namespace CourierService.Workers
                     // Idempotent: Tjek om vi allerede har oprettet dette udbud
                     if (!dbContext.DeliveryOffers.Any(d => d.Id == acceptedEvent.OrderId))
                     {
-                        var newOffer = new DeliveryOffer { Id = acceptedEvent.OrderId };
+                        var newOffer = new DeliveryOffer { Id = acceptedEvent.OrderId, ZipCode = acceptedEvent.ZipCode };
                         dbContext.DeliveryOffers.Add(newOffer);
                         await dbContext.SaveChangesAsync(stoppingToken);
 

@@ -7,5 +7,6 @@ namespace CourierService.Data
     {
         public CourierDbContext(DbContextOptions<CourierDbContext> options) : base(options) { }
         public DbSet<DeliveryOffer> DeliveryOffers { get; set; }
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
     }
 }

@@ -54,20 +54,25 @@ namespace OrderService.Workers
                             var body = Encoding.UTF8.GetBytes(message.Payload);
                             // Vi kan også parse JSON'en for at hente RestaurantId, hvis vi vil logge det eller bruge det i routing (hvis vi brugte en Direct exchange)
                             var jsonDoc = System.Text.Json.JsonDocument.Parse(message.Payload);
-                            var restaurantId = jsonDoc.RootElement.GetProperty("RestaurantId").ToString();
+                            //var restaurantId = jsonDoc.RootElement.GetProperty("RestaurantId").ToString();
 
                             // Publicer beskeden til RabbitMQ
                             await channel.BasicPublishAsync(
                                  exchange: "eaat_events",
-                                 routingKey: restaurantId, // RoutingKey bruges til at sende til specifikke køer baseret på RestaurantId
+                                 routingKey: "new_restaurant_order", // Vi kan bruge routingKey til at sende beskeden til specifikke køer, hvis vi havde en Direct exchange
                                  body: body,
                                  cancellationToken: stoppingToken);
 
-                            // Marker beskeden som sendt og gem i databasen
+                            // Marker beskeden som sendt
                             message.IsProcessed = true;
-                            await dbContext.SaveChangesAsync(stoppingToken);
-
                             _logger.LogInformation($"Sendte event {message.EventType} for besked ID {message.Id}");
+
+                            // Gem ændringen i databasen, så vi ikke sender den igen
+                            if (unsentMessages.Count != 0)
+                            {
+                                await dbContext.SaveChangesAsync(stoppingToken);
+                                _logger.LogInformation($"Opdaterede {unsentMessages.Count} beskeder som 'processed' i databasen.");
+                            }
                         }
                         catch (Exception ex)
                         {

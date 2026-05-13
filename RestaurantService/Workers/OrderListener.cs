@@ -13,7 +13,7 @@ public class OrderListener : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<OrderListener> _logger;
-    private readonly string _myRestaurantId = "1"; // Eksempel ID
+    //private readonly string _myRestaurantId = "1"; // Eksempel ID
 
     public OrderListener(IServiceProvider serviceProvider, ILogger<OrderListener> logger)
     {
@@ -32,7 +32,7 @@ public class OrderListener : BackgroundService
         await channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
 
         // Bind kun til ordrer med vores ID
-        await channel.QueueBindAsync(queueName, "eaat_events", routingKey: _myRestaurantId, cancellationToken: stoppingToken);
+        await channel.QueueBindAsync(queueName, "eaat_events", routingKey: "new_restaurant_order", cancellationToken: stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.ReceivedAsync += async (model, ea) =>
@@ -47,7 +47,7 @@ public class OrderListener : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<RestaurantDbContext>();
 
-                dbContext.Orders.Add(new RestaurantOrder { Id = orderEvent.OrderId });
+                dbContext.Orders.Add(new RestaurantOrder { Id = orderEvent.OrderId, ResturantId = orderEvent.RestaurantId });
                 await dbContext.SaveChangesAsync(stoppingToken);
                 _logger.LogInformation($"Ordre {orderEvent.OrderId} modtaget og gemt!");
             }
