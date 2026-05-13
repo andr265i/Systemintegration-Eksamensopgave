@@ -13,25 +13,25 @@ public class OrderListener : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<OrderListener> _logger;
-    //private readonly string _myRestaurantId = "1"; // Eksempel ID
+    private readonly IConnection _connection;
 
-    public OrderListener(IServiceProvider serviceProvider, ILogger<OrderListener> logger)
+
+    public OrderListener(IServiceProvider serviceProvider, ILogger<OrderListener> logger, IConnection connection)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _connection = connection;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var factory = new ConnectionFactory { HostName = "localhost" };
-        using var connection = await factory.CreateConnectionAsync(stoppingToken);
-        using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        using var channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
         await channel.ExchangeDeclareAsync("eaat_events", ExchangeType.Direct, cancellationToken: stoppingToken);
         var queueName = "restaurant_orders_queue";
         await channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
 
-        // Bind kun til ordrer med vores ID
+
         await channel.QueueBindAsync(queueName, "eaat_events", routingKey: "new_restaurant_order", cancellationToken: stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(channel);

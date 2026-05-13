@@ -11,22 +11,22 @@ public class OrderAcceptedListener : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<OrderAcceptedListener> _logger;
+    private readonly IConnection _connection;
 
     // Vi injicerer IServiceProvider fordi en BackgroundService lever for evigt (Singleton),
     // men vores DbContext kun lever kortvarigt pr. request (Scoped).
-    public OrderAcceptedListener(IServiceProvider serviceProvider, ILogger<OrderAcceptedListener> logger)
+    public OrderAcceptedListener(IServiceProvider serviceProvider, ILogger<OrderAcceptedListener> logger, IConnection connection)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _connection = connection;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("OrderService lytter nu efter accepterede ordrer...");
 
-        var factory = new ConnectionFactory { HostName = "localhost" };
-        var connection = await factory.CreateConnectionAsync(stoppingToken);
-        var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        using var channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
         // Vi lytter på den FÆLLES megafon for accepterede ordrer (Model A: Fanout)
         await channel.ExchangeDeclareAsync("accepted_orders", ExchangeType.Fanout, cancellationToken: stoppingToken);

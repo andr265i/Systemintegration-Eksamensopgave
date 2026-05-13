@@ -12,22 +12,23 @@ namespace CourierService.Workers
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<DeliveryOfferListener> _logger;
+        private readonly IConnection _connection;
 
-        public DeliveryOfferListener(IServiceProvider serviceProvider, ILogger<DeliveryOfferListener> logger)
+        public DeliveryOfferListener(IServiceProvider serviceProvider, ILogger<DeliveryOfferListener> logger, IConnection connection)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _connection = connection;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Courier Listener lytter efter accepterede ordrer...");
 
-            var factory = new ConnectionFactory { HostName = "localhost" };
-            using var connection = await factory.CreateConnectionAsync(stoppingToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+            using var channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-            // Forbind til den samme megafon som OrderService lytter på!
+
+            // Forbind til den samme megafon som OrderService lytter på
             await channel.ExchangeDeclareAsync("accepted_orders", ExchangeType.Fanout, cancellationToken: stoppingToken);
 
             // Budenes egen postkasse
