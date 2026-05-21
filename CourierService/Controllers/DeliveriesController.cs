@@ -39,7 +39,7 @@ namespace CourierService.Controllers
                 return Conflict("Beklager! Et andet bud var hurtigere og har allerede taget opgaven.");
             }
 
-            // 3. Budet var først! Vi låser opgaven til dem.
+            // 3. Budet var først Vi låser opgaven til dem.
             offer.Status = "Taken";
             offer.AssignedCourierId = request.CourierId;
 
